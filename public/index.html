@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF Upload and Print</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      #progress-container {
+        display: none;
+        margin-top: 20px;
+      }
+      #progress-bar {
+        width: 0;
+        height: 20px;
+      }
+      #statusMessage {
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2 class="mt-4">Upload and Print PDF</h2>
+      <form id="uploadForm" enctype="multipart/form-data">
+        <div class="form-group">
+          <label for="pdf">Choose PDF to upload:</label>
+          <input
+            type="file"
+            class="form-control-file"
+            id="pdf"
+            name="pdf"
+            accept="application/pdf"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="printer">Printer Name:</label>
+          <input
+            type="text"
+            class="form-control"
+            id="printer"
+            name="printer"
+            placeholder="Anydesk Printer"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="paperSize">Paper Size:</label>
+          <select class="form-control" id="paperSize" name="paperSize">
+            <option value="A4">A4</option>
+            <option value="A5">A5</option>
+            <option value="Letter">Letter</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="orientation">Orientation:</label>
+          <select class="form-control" id="orientation" name="orientation">
+            <option value="portrait">Portrait</option>
+            <option value="landscape">Landscape</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Upload & Print</button>
+      </form>
+
+      <div id="progress-container" class="mt-4">
+        <div class="progress">
+          <div
+            id="progress-bar"
+            class="progress-bar progress-bar-striped progress-bar-animated"
+            role="progressbar"
+            aria-valuenow="0"
+            aria-valuemin="0"
+            aria-valuemax="100"
+          ></div>
+        </div>
+      </div>
+
+      <p id="statusMessage"></p>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+      document
+        .getElementById("uploadForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const formData = new FormData();
+          formData.append("pdf", document.getElementById("pdf").files[0]);
+          formData.append(
+            "printer",
+            document.getElementById("printer").value ||
+              "EPSON L210 Series on 192.168.60.32"
+          );
+          formData.append(
+            "paperSize",
+            document.getElementById("paperSize").value
+          );
+          formData.append(
+            "orientation",
+            document.getElementById("orientation").value
+          );
+
+          const xhr = new XMLHttpRequest();
+          xhr.open("POST", "/upload-print", true);
+
+          xhr.upload.addEventListener("progress", function (e) {
+            if (e.lengthComputable) {
+              const percentComplete = (e.loaded / e.total) * 100;
+              document.getElementById("progress-container").style.display =
+                "block";
+              document.getElementById("progress-bar").style.width =
+                percentComplete + "%";
+              document
+                .getElementById("progress-bar")
+                .setAttribute("aria-valuenow", percentComplete);
+            }
+          });
+
+          xhr.addEventListener("load", function () {
+            document.getElementById("progress-container").style.display =
+              "none";
+            const result = JSON.parse(xhr.responseText);
+            document.getElementById("statusMessage").innerText = result.message;
+          });
+
+          xhr.addEventListener("error", function () {
+            document.getElementById("progress-container").style.display =
+              "none";
+            document.getElementById("statusMessage").innerText =
+              "An error occurred during upload.";
+          });
+
+          xhr.send(formData);
+        });
+    </script>
+  </body>
+</html>
